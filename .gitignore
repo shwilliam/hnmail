@@ -1,0 +1,16 @@
+.env
+
+.firebase/
+
+logs
+*.log
+npm-debug.log*
+firebase-debug.log*
+
+node_modules/
+build/Release
+
+pids
+*.pid
+*.seed
+*.pid.lock
