@@ -93,7 +93,7 @@
 
             try {
               const subscriptionRes = await fetch(
-                'http://localhost:5001/hnmail/us-central1/subscribe',
+                'https://us-central1-hnmail.cloudfunctions.net/subscribe ',
                 {
                   method: 'POST',
                   mode: 'cors',
