@@ -59,12 +59,18 @@
         height: 30px;
         margin: 2rem 0;
       }
+
+      .frequency-input {
+        display: flex;
+        flex-wrap: wrap;
+      }
     </style>
   </head>
   <body>
     <main id="main">
       <form id="subscription-form">
         <h1>Subscribe to HN Mail</h1>
+
         <label for="email-input" class="sr-only">Email</label>
         <input
           name="email-input"
@@ -73,8 +79,18 @@
           type="email"
           required
         />
+
+        <label for="frequency-input" class="sr-only">Frequency</label>
+        <select name="frequency-input" id="frequency-input">
+          <option value="daily">Daily</option>
+          <option value="two_daily">2 daily</option>
+          <option value="three_daily">3 daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+
         <button id="subscription-submit" type="submit">Subscribe</button>
       </form>
+
       <p id="subscription-error"></p>
     </main>
 
@@ -88,6 +104,9 @@
             const emailEl = e.currentTarget.elements['email-input']
             const email = emailEl.value
 
+            const frequencyEl = e.currentTarget.elements['frequency-input']
+            const frequency = frequencyEl.value
+
             const submitEl = document.getElementById('subscription-submit')
             submitEl.setAttribute('disabled', true)
 
@@ -97,7 +116,7 @@
                 {
                   method: 'POST',
                   mode: 'cors',
-                  body: JSON.stringify({email}),
+                  body: JSON.stringify({email, frequency}),
                 },
               )
 

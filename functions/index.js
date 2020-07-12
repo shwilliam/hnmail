@@ -7,26 +7,30 @@ const mailgun = require('mailgun-js')({
 })
 
 const EMAILS = {
-  DAILY: 'HN Mail <daily@sandbox18c1d2caa21847fd902fac9158257d95.mailgun.org>',
-  DEMO: 'shwilliam <shwilliam@hey.com>',
+  daily: 'daily@hnmail.xyz',
+  two_daily: '2daily@hnmail.xyz',
+  three_daily: '3daily@hnmail.xyz',
+  weekly: 'weekly@hnmail.xyz',
+  demo: 'shwilliam@hey.com',
 }
 
-exports.demo = functions.https.onRequest(async (_req, res) => {
-  try {
-    const newsletter = await generateNewsletter()
-    await sendEmail(newsletter, EMAILS.DEMO)
-    res.send('🚀')
-  } catch (error) {
-    res.status(500).end()
-  }
-})
+// exports.demo = functions.https.onRequest(async (_req, res) => {
+//   try {
+//     const newsletter = await generateNewsletter()
+//     await sendEmail(newsletter, EMAILS.demo)
+//     res.send('🚀')
+//   } catch (error) {
+//     res.status(500).end()
+//   }
+// })
 
 exports.subscribe = functions.https.onRequest(async (req, res) => {
   cors(req, res, async () => {
     try {
       const body = JSON.parse(req.body)
       const email = body.email
-      await subscribeEmail(email)
+      const frequency = body.frequency
+      await subscribeEmail(email, frequency)
       res.send('🚀')
     } catch (error) {
       res.status(500).end()
@@ -34,12 +38,51 @@ exports.subscribe = functions.https.onRequest(async (req, res) => {
   })
 })
 
-exports.scheduledFunctionPlainEnglish = functions.pubsub
-  .schedule('every 10 minutes') // FIXME
+exports.sendDailyNewsletter = functions.pubsub
+  .schedule('every day 09:00')
   .onRun(async _ctx => {
     try {
       const newsletter = await generateNewsletter()
-      await sendEmail(newsletter, EMAILS.DAILY)
+      await sendEmail(
+        newsletter,
+        [EMAILS.daily, EMAILS.two_daily, EMAILS.three_daily].join(','),
+      )
+    } catch (error) {
+      res.status(500).send()
+    }
+  })
+
+exports.sendTwoDailyNewsletter = functions.pubsub
+  .schedule('every day 15:00')
+  .onRun(async _ctx => {
+    try {
+      const newsletter = await generateNewsletter()
+      await sendEmail(
+        newsletter,
+        [EMAILS.two_daily, EMAILS.three_daily].join(','),
+      )
+    } catch (error) {
+      res.status(500).send()
+    }
+  })
+
+exports.sendThreeDailyNewsletter = functions.pubsub
+  .schedule('every day 12:00')
+  .onRun(async _ctx => {
+    try {
+      const newsletter = await generateNewsletter()
+      await sendEmail(newsletter, EMAILS.three_daily)
+    } catch (error) {
+      res.status(500).send()
+    }
+  })
+
+exports.sendWeeklyNewsletter = functions.pubsub
+  .schedule('every monday 09:00')
+  .onRun(async _ctx => {
+    try {
+      const newsletter = await generateNewsletter()
+      await sendEmail(newsletter, EMAILS.weekly)
     } catch (error) {
       res.status(500).send()
     }
@@ -103,13 +146,10 @@ const generateNewsletter = async () => {
   return newsletterHtml
 }
 
-const subscribeEmail = email =>
+const subscribeEmail = (email, frequency) =>
   new Promise((res, rej) => {
-    const listEmailName = 'daily'
-    const dailyList = mailgun.lists(
-      `${listEmailName}@sandbox18c1d2caa21847fd902fac9158257d95.mailgun.org`,
-    )
-    dailyList
+    const mailingList = mailgun.lists(EMAILS[frequency])
+    mailingList
       .members()
       .create({subscribed: true, address: email}, (error, data) => {
         if (error) {
