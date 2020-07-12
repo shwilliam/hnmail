@@ -1,24 +1,49 @@
 const functions = require('firebase-functions')
 const fetch = require('node-fetch')
+const cors = require('cors')({origin: true})
 const mailgun = require('mailgun-js')({
   apiKey: functions.config().mailgun.key,
   domain: functions.config().mailgun.domain,
 })
 
-const emailAddress = 'shwilliam <shwilliam@hey.com>'
+const EMAILS = {
+  DAILY: 'HN Mail <daily@sandbox18c1d2caa21847fd902fac9158257d95.mailgun.org>',
+  DEMO: 'shwilliam <shwilliam@hey.com>',
+}
 
-exports.www = functions.https.onRequest(async (_req, res) => {
-  const newsletter = await generateNewsletter()
-  await sendEmail(newsletter, emailAddress)
-  res.send('🚀')
+exports.demo = functions.https.onRequest(async (_req, res) => {
+  try {
+    const newsletter = await generateNewsletter()
+    await sendEmail(newsletter, EMAILS.DEMO)
+    res.send('🚀')
+  } catch (error) {
+    res.status(500).end()
+  }
 })
 
-// exports.scheduledFunctionPlainEnglish = functions.pubsub
-//   .schedule('every 2 minutes')
-//   .onRun(async _ctx => {
-//     const newsletter = await generateNewsletter()
-//     await sendEmail(newsletter, emailAddress)
-//   })
+exports.subscribe = functions.https.onRequest(async (req, res) => {
+  cors(req, res, async () => {
+    try {
+      const body = JSON.parse(req.body)
+      const email = body.email
+      await subscribeEmail(email)
+      res.send('🚀')
+    } catch (error) {
+      res.status(500).end()
+    }
+  })
+})
+
+exports.scheduledFunctionPlainEnglish = functions.pubsub
+  .schedule('every 10 minutes') // FIXME
+  .onRun(async _ctx => {
+    try {
+      const newsletter = await generateNewsletter()
+      await sendEmail(newsletter, EMAILS.DAILY)
+    } catch (error) {
+      res.status(500).send()
+    }
+  })
 
 const storyTemplate = storyObj => `<a href="${
   storyObj.url
@@ -78,8 +103,27 @@ const generateNewsletter = async () => {
   return newsletterHtml
 }
 
+const subscribeEmail = email =>
+  new Promise((res, rej) => {
+    const listEmailName = 'daily'
+    const dailyList = mailgun.lists(
+      `${listEmailName}@sandbox18c1d2caa21847fd902fac9158257d95.mailgun.org`,
+    )
+    dailyList
+      .members()
+      .create({subscribed: true, address: email}, (error, data) => {
+        if (error) {
+          console.error(error)
+          rej(error)
+          return
+        }
+
+        res(data)
+      })
+  })
+
 const sendEmail = (html, email) =>
-  new Promise((res, _rej) => {
+  new Promise((res, rej) => {
     mailgun.messages().send(
       {
         from: 'HN Mail <news@hnmail.xyz>',
@@ -90,7 +134,7 @@ const sendEmail = (html, email) =>
       (error, body) => {
         if (error) {
           console.error(error)
-          res(null)
+          rej(error)
           return
         }
 
