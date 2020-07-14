@@ -12,26 +12,36 @@
         overflow: hidden;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
           Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        font-size: 15px;
+        font-size: 19px;
+        line-height: 1.5;
         background-color: #f6f6ef;
       }
 
       h1 {
-        font: inherit;
-        font-weight: 800;
-        margin-bottom: 1rem;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+      }
+
+      p {
+        margin: 1.75rem 0;
       }
 
       main {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        margin: 4.75rem auto 0 auto;
+        padding: 0 1.5rem;
+        max-width: 600px;
         height: 100%;
-        text-align: center;
       }
 
       form {
+        color: #fff;
         background-color: #ff6600;
         padding: 1rem 2rem 1.5rem 2rem;
       }
@@ -64,29 +74,56 @@
         display: flex;
         flex-wrap: wrap;
       }
+
+      .subscription-form {
+        margin-top: 2rem;
+      }
+
+      .subscription-form__inputs {
+        display: flex;
+      }
+
+      .subscription-form__email {
+        margin-right: 0.5rem;
+      }
     </style>
   </head>
   <body>
     <main id="main">
-      <form id="subscription-form">
-        <h1>Subscribe to HN Mail</h1>
+      <h1>HN Mail</h1>
 
-        <label for="email-input" class="sr-only">Email</label>
-        <input
-          name="email-input"
-          id="email-input"
-          placeholder="shwilliam@hey.com"
-          type="email"
-          required
-        />
+      <p>
+        Stay up to date with
+        <a
+          href="https://news.ycombinator.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Hacker News</a
+        >
+        by receiving a snapshot of the top stories straight to your inbox.
+      </p>
 
-        <label for="frequency-input" class="sr-only">Frequency</label>
-        <select name="frequency-input" id="frequency-input">
-          <option value="daily">Daily</option>
-          <option value="two_daily">2 daily</option>
-          <option value="three_daily">3 daily</option>
-          <option value="weekly">Weekly</option>
-        </select>
+      <form id="subscription-form" class="subscription-form">
+        <h2>Subscribe</h2>
+        <div class="subscription-form__inputs">
+          <label for="email-input" class="sr-only">Email</label>
+          <input
+            name="email-input"
+            id="email-input"
+            class="subscription-form__email"
+            placeholder="your@email.com"
+            type="email"
+            required
+          />
+
+          <label for="frequency-input" class="sr-only">Frequency</label>
+          <select name="frequency-input" id="frequency-input">
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="two_daily">2 daily</option>
+            <option value="three_daily">3 daily</option>
+          </select>
+        </div>
 
         <button id="subscription-submit" type="submit">Subscribe</button>
       </form>
