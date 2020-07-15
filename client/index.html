@@ -124,6 +124,19 @@
             <option value="two_daily">2 daily</option>
             <option value="three_daily">3 daily</option>
           </select>
+
+          <label for="amount-input" class="sr-only">Amount</label>
+          <input
+            name="amount-input"
+            id="amount-input"
+            class="subscription-form__amount"
+            type="number"
+            value="10"
+            min="1"
+            max="50"
+            step="1"
+            required
+          />
         </div>
 
         <button id="subscription-submit" type="submit">Subscribe</button>
@@ -145,6 +158,9 @@
             const frequencyEl = e.currentTarget.elements['frequency-input']
             const frequency = frequencyEl.value
 
+            const amountEl = e.currentTarget.elements['amount-input']
+            const amount = amountEl.value
+
             const submitEl = document.getElementById('subscription-submit')
             submitEl.setAttribute('disabled', true)
 
@@ -154,7 +170,7 @@
                 {
                   method: 'POST',
                   mode: 'cors',
-                  body: JSON.stringify({email, frequency}),
+                  body: JSON.stringify({email, frequency, amount}),
                 },
               )
 
