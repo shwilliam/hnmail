@@ -11,18 +11,18 @@ const EMAILS = {
   two_daily: '2daily@hnmail.xyz',
   three_daily: '3daily@hnmail.xyz',
   weekly: 'weekly@hnmail.xyz',
-  demo: 'shwilliam@hey.com',
+  demo: 'demo@hnmail.xyz',
 }
 
-// exports.demo = functions.https.onRequest(async (_req, res) => {
-//   try {
-//     const newsletter = await generateNewsletter()
-//     await sendEmail(newsletter, EMAILS.demo)
-//     res.send('🚀')
-//   } catch (error) {
-//     res.status(500).end()
-//   }
-// })
+exports.demo = functions.https.onRequest(async (_req, res) => {
+  try {
+    const topStories = await getTopStories()
+    await sendNewsletter(topStories, [EMAILS.demo])
+    res.send('🚀')
+  } catch (error) {
+    console.error(error)
+  }
+})
 
 exports.subscribe = functions.https.onRequest(async (req, res) => {
   cors(req, res, async () => {
@@ -30,7 +30,10 @@ exports.subscribe = functions.https.onRequest(async (req, res) => {
       const body = JSON.parse(req.body)
       const email = body.email
       const frequency = body.frequency
-      await subscribeEmail(email, frequency)
+      const amount = Number(body.amount)
+
+      await subscribeEmail(email, frequency, amount)
+
       res.send('🚀')
     } catch (error) {
       res.status(500).end()
@@ -42,13 +45,15 @@ exports.sendDailyNewsletter = functions.pubsub
   .schedule('every day 09:00')
   .onRun(async _ctx => {
     try {
-      const newsletter = await generateNewsletter()
-      await sendEmail(
-        newsletter,
-        [EMAILS.daily, EMAILS.two_daily, EMAILS.three_daily].join(','),
-      )
+      const topStories = await getTopStories()
+
+      await sendNewsletter(topStories, [
+        EMAILS.daily,
+        EMAILS.two_daily,
+        EMAILS.three_daily,
+      ])
     } catch (error) {
-      res.status(500).send()
+      console.error(error)
     }
   })
 
@@ -56,13 +61,10 @@ exports.sendTwoDailyNewsletter = functions.pubsub
   .schedule('every day 15:00')
   .onRun(async _ctx => {
     try {
-      const newsletter = await generateNewsletter()
-      await sendEmail(
-        newsletter,
-        [EMAILS.two_daily, EMAILS.three_daily].join(','),
-      )
+      const topStories = await getTopStories()
+      await sendNewsletter(topStories, [EMAILS.two_daily, EMAILS.three_daily])
     } catch (error) {
-      res.status(500).send()
+      console.error(error)
     }
   })
 
@@ -70,10 +72,10 @@ exports.sendThreeDailyNewsletter = functions.pubsub
   .schedule('every day 12:00')
   .onRun(async _ctx => {
     try {
-      const newsletter = await generateNewsletter()
-      await sendEmail(newsletter, EMAILS.three_daily)
+      const topStories = await getTopStories()
+      await sendNewsletter(topStories, [EMAILS.three_daily])
     } catch (error) {
-      res.status(500).send()
+      console.error(error)
     }
   })
 
@@ -81,10 +83,10 @@ exports.sendWeeklyNewsletter = functions.pubsub
   .schedule('every monday 09:00')
   .onRun(async _ctx => {
     try {
-      const newsletter = await generateNewsletter()
-      await sendEmail(newsletter, EMAILS.weekly)
+      const topStories = await getTopStories()
+      await sendNewsletter(topStories, [EMAILS.weekly])
     } catch (error) {
-      res.status(500).send()
+      console.error(error)
     }
   })
 
@@ -124,42 +126,70 @@ const newsletterTemplate = children => `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML
   </body>
 </html>`
 
-const generateNewsletter = async () => {
+const getTopStories = async () => {
   const topStoriesIds = await fetch(
     'https://hacker-news.firebaseio.com/v0/topstories.json',
   )
   const topStoriesIdsJson = await topStoriesIds.json()
-  const topTenStoriesIds = topStoriesIdsJson.slice(0, 10)
-  const topTenStoriesReqUrls = topTenStoriesIds.map(
-    id => `https://hacker-news.firebaseio.com/v0/item/${id}.json`,
-  )
-  const topStories = await Promise.all(
-    topTenStoriesReqUrls.map(id => fetch(id)),
-  )
-  const topStoriesJson = await Promise.all(
-    topStories.map(async res => await res.json()),
-  )
-  const newsletterHtml = newsletterTemplate(
-    topStoriesJson.map(storyTemplate).join(''),
-  )
+  const topStoriesReqUrls = topStoriesIdsJson
+    .slice(0, 50)
+    .map(id => `https://hacker-news.firebaseio.com/v0/item/${id}.json`)
 
-  return newsletterHtml
+  // TODO: handle error thrown if post no longer exists
+  const topStories = await Promise.all(topStoriesReqUrls.map(id => fetch(id)))
+  const topStoriesJson = await Promise.all(topStories.map(res => res.json()))
+
+  return topStoriesJson
 }
 
-const subscribeEmail = (email, frequency) =>
+const sendNewsletter = (stories, emails) =>
+  Promise.all(
+    emails.map(email => {
+      const mailingList = mailgun.lists(email)
+
+      return new Promise((res, rej) => {
+        mailingList.members().list(async (error, members) => {
+          if (error) {
+            console.error(error)
+            rej(error)
+            return
+          }
+
+          await Promise.all(
+            members.items.map(({address, vars}) => {
+              const storiesToSend = stories.slice(0, Number(vars.amount))
+              const newsletterHtml = newsletterTemplate(
+                storiesToSend.map(storyTemplate).join(''),
+              )
+
+              return sendEmail(newsletterHtml, address)
+            }),
+          )
+
+          res(true)
+        })
+      })
+    }),
+  )
+
+const subscribeEmail = (email, frequency, amount) =>
   new Promise((res, rej) => {
     const mailingList = mailgun.lists(EMAILS[frequency])
+
     mailingList
       .members()
-      .create({subscribed: true, address: email}, (error, data) => {
-        if (error) {
-          console.error(error)
-          rej(error)
-          return
-        }
+      .create(
+        {subscribed: true, address: email, vars: {amount}},
+        (error, data) => {
+          if (error) {
+            console.error(error)
+            rej(error)
+            return
+          }
 
-        res(data)
-      })
+          res(data)
+        },
+      )
   })
 
 const sendEmail = (html, email) =>
@@ -168,8 +198,8 @@ const sendEmail = (html, email) =>
       {
         from: 'HN Mail <news@hnmail.xyz>',
         to: email,
-        subject: 'HN Mail',
-        html: html,
+        subject: 'Your digest',
+        html,
       },
       (error, body) => {
         if (error) {
