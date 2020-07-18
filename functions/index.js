@@ -10,6 +10,9 @@ const EMAILS = {
   daily: 'daily@hnmail.xyz',
   two_daily: '2daily@hnmail.xyz',
   three_daily: '3daily@hnmail.xyz',
+  four_daily: '4daily@hnmail.xyz',
+  five_daily: '5daily@hnmail.xyz',
+  six_daily: '6daily@hnmail.xyz',
   weekly: 'weekly@hnmail.xyz',
   demo: 'demo@hnmail.xyz',
 }
@@ -21,6 +24,7 @@ exports.demo = functions.https.onRequest(async (_req, res) => {
     res.send('🚀')
   } catch (error) {
     console.error(error)
+    res.status(500).send(error)
   }
 })
 
@@ -36,7 +40,8 @@ exports.subscribe = functions.https.onRequest(async (req, res) => {
 
       res.send('🚀')
     } catch (error) {
-      res.status(500).end()
+      console.error(error)
+      res.status(500).send(error)
     }
   })
 })
@@ -54,6 +59,7 @@ exports.sendDailyNewsletter = functions.pubsub
       ])
     } catch (error) {
       console.error(error)
+      res.status(500).send(error)
     }
   })
 
@@ -65,6 +71,7 @@ exports.sendTwoDailyNewsletter = functions.pubsub
       await sendNewsletter(topStories, [EMAILS.two_daily, EMAILS.three_daily])
     } catch (error) {
       console.error(error)
+      res.status(500).send(error)
     }
   })
 
@@ -73,9 +80,55 @@ exports.sendThreeDailyNewsletter = functions.pubsub
   .onRun(async _ctx => {
     try {
       const topStories = await getTopStories()
-      await sendNewsletter(topStories, [EMAILS.three_daily])
+      await sendNewsletter(topStories, [
+        EMAILS.three_daily,
+        EMAILS.four_daily,
+        EMAILS.five_daily,
+        EMAILS.six_daily,
+      ])
     } catch (error) {
       console.error(error)
+      res.status(500).send(error)
+    }
+  })
+
+exports.sendFourDailyNewsletter = functions.pubsub
+  .schedule('every day 18:00')
+  .onRun(async _ctx => {
+    try {
+      const topStories = await getTopStories()
+      await sendNewsletter(topStories, [
+        EMAILS.four_daily,
+        EMAILS.five_daily,
+        EMAILS.six_daily,
+      ])
+    } catch (error) {
+      console.error(error)
+      res.status(500).send(error)
+    }
+  })
+
+exports.sendFiveDailyNewsletter = functions.pubsub
+  .schedule('every day 21:00')
+  .onRun(async _ctx => {
+    try {
+      const topStories = await getTopStories()
+      await sendNewsletter(topStories, [EMAILS.five_daily, EMAILS.six_daily])
+    } catch (error) {
+      console.error(error)
+      res.status(500).send(error)
+    }
+  })
+
+exports.sendSixDailyNewsletter = functions.pubsub
+  .schedule('every day 06:00')
+  .onRun(async _ctx => {
+    try {
+      const topStories = await getTopStories()
+      await sendNewsletter(topStories, [EMAILS.six_daily])
+    } catch (error) {
+      console.error(error)
+      res.status(500).send(error)
     }
   })
 
@@ -87,6 +140,7 @@ exports.sendWeeklyNewsletter = functions.pubsub
       await sendNewsletter(topStories, [EMAILS.weekly])
     } catch (error) {
       console.error(error)
+      res.status(500).send(error)
     }
   })
 
