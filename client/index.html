@@ -9,13 +9,16 @@
     <style>
       html,
       body {
-        height: 100%;
-        overflow: hidden;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
           Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         font-size: 19px;
         line-height: 1.5;
         background-color: #f6f6ef;
+        min-width: 295px;
+      }
+
+      body {
+        margin-bottom: 4em;
       }
 
       h1 {
@@ -27,7 +30,7 @@
       h2 {
         font-size: 1.2rem;
         font-weight: 600;
-        margin: 0 0 1rem 0;
+        margin: 0.5rem 0 1.5rem 0;
       }
 
       p {
@@ -37,7 +40,7 @@
       main {
         margin: 4.75rem auto 0 auto;
         padding: 0 1.5rem;
-        max-width: 600px;
+        max-width: 520px;
         height: 100%;
       }
 
@@ -47,14 +50,52 @@
         padding: 1rem 2rem 1.5rem 2rem;
       }
 
-      label,
+      label {
+        display: block;
+        font-size: 0.85rem;
+        margin: 0.25em 0.5rem 0.25rem 0;
+        position: relative;
+        top: -3px;
+      }
+
       input {
         display: block;
         width: 100%;
       }
 
+      button,
+      input,
+      select {
+        position: relative;
+        z-index: 0;
+        padding: 0.5em 0.7em;
+        margin-bottom: 0.75rem;
+        background: #ffe;
+        border: 0;
+        overflow: hidden;
+      }
+
+      button {
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
       [type='submit'] {
-        margin: 0.5rem 0;
+        margin: 1rem 0 0.5rem 0;
+      }
+
+      details[open] summary {
+        text-decoration: underline;
+      }
+
+      details ::-webkit-details-marker {
+        display: none;
+      }
+
+      summary {
+        list-style-type: none;
+        text-decoration: underline;
+        cursor: pointer;
       }
 
       .sr-only {
@@ -66,32 +107,67 @@
         overflow: hidden;
       }
 
+      .subscription-form__input {
+        white-space: nowrap;
+        display: flex;
+      }
+
       .error {
         height: 30px;
         margin: 2rem 0;
       }
 
-      .frequency-input {
-        display: flex;
-        flex-wrap: wrap;
-      }
-
       .subscription-form {
+        text-align: center;
         margin-top: 2rem;
-      }
-
-      .subscription-form__inputs {
-        display: flex;
       }
 
       .subscription-form__email {
         margin-right: 0.5rem;
+        flex-grow: 1;
+        flex-basis: 33%;
+      }
+
+      .subscription-form__frequency {
+        margin-right: 2.5rem;
+      }
+
+      .subscription-form__amount {
+        width: 50px;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 0.85rem;
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 1rem 1.5rem;
+        background-color: #f6f6ef;
+      }
+
+      .privacy-policy {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .privacy-policy__details {
+        text-align: left;
+        margin: 0.5rem 0;
+      }
+
+      a.heart {
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+        text-decoration: none;
       }
     </style>
   </head>
   <body>
     <main id="main">
-      <h1>HN Mail</h1>
+      <h1>Hacker News Newsletter</h1>
 
       <p>
         Stay up to date with
@@ -99,14 +175,16 @@
           href="https://news.ycombinator.com/"
           target="_blank"
           rel="noopener noreferrer"
-          >Hacker News</a
         >
+          Hacker News
+        </a>
         by receiving a snapshot of the top stories straight to your inbox.
       </p>
 
       <form id="subscription-form" class="subscription-form">
         <h2>Subscribe</h2>
-        <div class="subscription-form__inputs">
+
+        <div class="subscription-form__input">
           <label for="email-input" class="sr-only">Email</label>
           <input
             name="email-input"
@@ -116,16 +194,27 @@
             type="email"
             required
           />
+        </div>
 
-          <label for="frequency-input" class="sr-only">Frequency</label>
-          <select name="frequency-input" id="frequency-input">
+        <div class="subscription-form__input">
+          <label for="frequency-input">Frequency</label>
+          <select
+            name="frequency-input"
+            id="frequency-input"
+            class="subscription-form__frequency"
+          >
             <option value="weekly">Weekly</option>
             <option value="daily">Daily</option>
             <option value="two_daily">2 daily</option>
             <option value="three_daily">3 daily</option>
+            <option value="four_daily">4 daily</option>
+            <option value="five_daily">5 daily</option>
+            <option value="six_daily">6 daily</option>
           </select>
+        </div>
 
-          <label for="amount-input" class="sr-only">Amount</label>
+        <div class="subscription-form__input">
+          <label for="amount-input">Stories per email</label>
           <input
             name="amount-input"
             id="amount-input"
@@ -143,6 +232,31 @@
       </form>
 
       <p id="subscription-error"></p>
+
+      <a
+        class="heart"
+        href="https://github.com/shwilliam"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span role="img" aria-label="orange heart">🧡</span>
+        <span class="sr-only">Author's GitHub</span>
+      </a>
+
+      <footer class="footer">
+        <details class="privacy-policy">
+          <summary>Privacy policy</summary>
+
+          <p class="privacy-policy__details">
+            We have no interest in collecting your data; all that we store is
+            your email. No cookies
+            <span role="img" aria-label="woman gesturing no">🙅‍♀️</span
+            ><span role="img" aria-label="cookie">🍪</span>. If anything major
+            changes with this service you will be notified and in the worst case
+            asked to resubscribe.
+          </p>
+        </details>
+      </footer>
     </main>
 
     <script>
